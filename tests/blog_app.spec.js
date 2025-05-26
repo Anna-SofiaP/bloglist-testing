@@ -20,9 +20,7 @@ describe('Blog app', () => {
     await expect(page.getByText('login')).toBeVisible()
   })
 
-  describe('Login', () => {
-    // Test login fail before testing login success
-    // After login success the user is logged in
+  test.describe('Login', () => {
     test('fails with wrong credentials', async ({ page }) => {
         await page.goto('http://localhost:5173')
 
@@ -45,23 +43,46 @@ describe('Blog app', () => {
   })
 
   describe('When logged in', () => {
-    // User has already been logged in in the previous test?
     beforeEach(async ({ page }) => {
-        await page.getByTestId('username').fill('magicadehex')
-        await page.getByTestId('password').fill('magiaa123')
-        await page.getByRole('button', { name: 'login' }).click()
+      await page.goto('http://localhost:5173')
+
+      await page.getByTestId('username').fill('magicadehex')
+      await page.getByTestId('password').fill('magiaa123')
+      await page.getByRole('button', { name: 'login' }).click()
     })
   
     test('a new blog can be created', async ({ page }) => {
-        await expect(page.getByText('create new blog')).toBeVisible()
-        await page.getByRole('button', { name: 'create new blog' }).click()
+      await expect(page.getByText('create new blog')).toBeVisible()
+      await page.getByRole('button', { name: 'create new blog' }).click()
 
+      await page.getByTestId('title').fill('all about magic potions')
+      await page.getByTestId('author').fill('Milla Magia')
+      await page.getByTestId('url').fill('magicpotions.com')
+
+      await page.getByRole('button', { name: 'create' }).click()
+      await expect(page.getByText('all about magic potions by Milla Magia', { exact: true })).toBeVisible()
+    })
+
+    describe('and when there is a blog', () => {
+      beforeEach(async ({ page }) => {
+        // Create a blog post
+        await page.getByRole('button', { name: 'create new blog' }).click()
         await page.getByTestId('title').fill('all about magic potions')
         await page.getByTestId('author').fill('Milla Magia')
         await page.getByTestId('url').fill('magicpotions.com')
-
         await page.getByRole('button', { name: 'create' }).click()
-        await expect(page.getByText('all about magic potions by Milla Magia', { exact: true })).toBeVisible()
+      })
+
+      test('that blog can be liked', async ({ page }) => {
+        await expect(page.getByText('show more information')).toBeVisible()
+        await page.getByRole('button', { name: 'show more information' }).click()
+  
+        await expect(page.getByText('like this blog')).toBeVisible()
+        await expect(page.getByText('Likes: 0')).toBeVisible()
+        await page.getByRole('button', { name: 'like this blog' }).click()
+  
+        await expect(page.getByText('Likes: 1')).toBeVisible()      
+      })
     })
   })
 })

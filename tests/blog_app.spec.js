@@ -15,8 +15,8 @@ describe('Blog app', () => {
   })
 
   test('Login form is shown', async ({ page }) => {
-    await expect(page.getByText('username')).toBeVisible()
-    await expect(page.getByText('password')).toBeVisible()
+    await expect(page.getByTestId('username')).toBeVisible()
+    await expect(page.getByTestId('password')).toBeVisible()
     await expect(page.getByText('login')).toBeVisible()
   })
 
@@ -26,8 +26,8 @@ describe('Blog app', () => {
     test('fails with wrong credentials', async ({ page }) => {
         await page.goto('http://localhost:5173')
 
-        await page.getByRole('textbox').first().fill('wrongusername')
-        await page.getByRole('textbox').last().fill('wrongpassword')
+        await page.getByTestId('username').fill('wrongusername')
+        await page.getByTestId('password').fill('wrongpassword')
         await page.getByRole('button', { name: 'login' }).click()
 
         await expect(page.getByText('wrong username or password')).toBeVisible()
@@ -36,11 +36,32 @@ describe('Blog app', () => {
     test('succeeds with correct credentials', async ({ page }) => {
         await page.goto('http://localhost:5173')
 
-        await page.getByRole('textbox').first().fill('magicadehex')
-        await page.getByRole('textbox').last().fill('magiaa123')
+        await page.getByTestId('username').fill('magicadehex')
+        await page.getByTestId('password').fill('magiaa123')
         await page.getByRole('button', { name: 'login' }).click()
         
         await expect(page.getByText('Welcome, Milla Magia!')).toBeVisible()
+    })
+  })
+
+  describe('When logged in', () => {
+    // User has already been logged in in the previous test?
+    beforeEach(async ({ page }) => {
+        await page.getByTestId('username').fill('magicadehex')
+        await page.getByTestId('password').fill('magiaa123')
+        await page.getByRole('button', { name: 'login' }).click()
+    })
+  
+    test('a new blog can be created', async ({ page }) => {
+        await expect(page.getByText('create new blog')).toBeVisible()
+        await page.getByRole('button', { name: 'create new blog' }).click()
+
+        await page.getByTestId('title').fill('all about magic potions')
+        await page.getByTestId('author').fill('Milla Magia')
+        await page.getByTestId('url').fill('magicpotions.com')
+
+        await page.getByRole('button', { name: 'create' }).click()
+        await expect(page.getByText('all about magic potions by Milla Magia', { exact: true })).toBeVisible()
     })
   })
 })

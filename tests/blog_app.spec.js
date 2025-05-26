@@ -11,6 +11,13 @@ describe('Blog app', () => {
         password: 'magiaa123'
       }
     })
+    await request.post('http://localhost:3003/api/users', {
+      data: {
+        name: 'Mansikka Marja',
+        username: 'marjaa12',
+        password: 'mansikka43'
+      }
+    })
 
     await page.goto('http://localhost:5173')
   })
@@ -110,6 +117,31 @@ describe('Blog app', () => {
 
         await expect(page.getByText('all about magic potions by Milla Magia', { exact: true })).not.toBeVisible()
         await expect(page.getByText('life at Vesuvius mountain by Milla Magia', { exact: true })).toBeVisible()
+      })
+
+      test('delete blog button for specific blog is visible only for the user who added the blog', async ({ page }) => {
+        // Milla Magia is logged in: show Milla Magia's blogs
+        await expect(page.getByText('Welcome, Milla Magia!')).toBeVisible()
+        await expect(page.getByText('all about magic potions by Milla Magia', { exact: true })).toBeVisible()
+        await expect(page.getByText('life at Vesuvius mountain by Milla Magia', { exact: true })).toBeVisible()
+
+        // Delete buttons are visible
+        await expect(page.getByText('delete this blog').first()).toBeVisible()
+        await expect(page.getByText('delete this blog').last()).toBeVisible()
+
+        // Log Milla Magia out
+        await page.getByRole('button', { name: 'Log Out'}).click()
+        // ...and log in as Mansikka Marja
+        await loginWith(page, 'marjaa12', 'mansikka43')
+
+        // Show list of blogs
+        await expect(page.getByText('Welcome, Mansikka Marja!')).toBeVisible()
+        await expect(page.getByText('all about magic potions by Milla Magia', { exact: true })).toBeVisible()
+        await expect(page.getByText('life at Vesuvius mountain by Milla Magia', { exact: true })).toBeVisible()
+
+        // This time, delete buttons are NOT visible
+        await expect(page.getByText('delete this blog').first()).not.toBeVisible()
+        await expect(page.getByText('delete this blog').last()).not.toBeVisible()
       })
     })
   })

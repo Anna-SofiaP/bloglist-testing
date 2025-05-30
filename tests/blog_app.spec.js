@@ -1,5 +1,5 @@
 const { test, expect, beforeEach, describe } = require('@playwright/test')
-import { loginWith, createBlogWith } from './helper'
+import { loginWith, createBlogWith, likeThisBlog } from './helper'
 
 describe('Blog app', () => {
   beforeEach(async ({ page, request }) => {
@@ -34,10 +34,6 @@ describe('Blog app', () => {
 
         await loginWith(page, 'wrongusername', 'wrongpassword')
 
-        //await page.getByTestId('username').fill('wrongusername')
-        //await page.getByTestId('password').fill('wrongpassword')
-        //await page.getByRole('button', { name: 'login' }).click()
-
         await expect(page.getByText('wrong username or password')).toBeVisible()
     })
 
@@ -45,10 +41,6 @@ describe('Blog app', () => {
         await page.goto('http://localhost:5173')
 
         await loginWith(page, 'magicadehex', 'magiaa123')
-
-        //await page.getByTestId('username').fill('magicadehex')
-        //await page.getByTestId('password').fill('magiaa123')
-        //await page.getByRole('button', { name: 'login' }).click()
         
         await expect(page.getByText('Welcome, Milla Magia!')).toBeVisible()
     })
@@ -59,23 +51,13 @@ describe('Blog app', () => {
       await page.goto('http://localhost:5173')
 
       await loginWith(page, 'magicadehex', 'magiaa123')
-
-      //await page.getByTestId('username').fill('magicadehex')
-      //await page.getByTestId('password').fill('magiaa123')
-      //await page.getByRole('button', { name: 'login' }).click()
     })
   
     test('a new blog can be created', async ({ page }) => {
       await expect(page.getByText('create new blog')).toBeVisible()
-      //await page.getByRole('button', { name: 'create new blog' }).click()
 
       await createBlogWith(page, 'all about magic potions', 'Milla Magia', 'magicpotions.com')
 
-      //await page.getByTestId('title').fill('all about magic potions')
-      //await page.getByTestId('author').fill('Milla Magia')
-      //await page.getByTestId('url').fill('magicpotions.com')
-
-      //await page.getByRole('button', { name: 'create' }).click()
       await expect(page.getByText('all about magic potions by Milla Magia', { exact: true })).toBeVisible()
     })
 
@@ -84,11 +66,7 @@ describe('Blog app', () => {
         // Create a blog post
         await createBlogWith(page, 'all about magic potions', 'Milla Magia', 'magicpotions.com')
         await createBlogWith(page, 'life at Vesuvius mountain', 'Milla Magia', 'vesuviuslife.com')
-        //await page.getByRole('button', { name: 'create new blog' }).click()
-        //await page.getByTestId('title').fill('all about magic potions')
-        //await page.getByTestId('author').fill('Milla Magia')
-        //await page.getByTestId('url').fill('magicpotions.com')
-        //await page.getByRole('button', { name: 'create' }).click()
+        await createBlogWith(page, 'magical girl', 'Milla Magia', 'magicalgirl.com')
       })
 
       test('a blog can be liked', async ({ page }) => {
@@ -142,6 +120,68 @@ describe('Blog app', () => {
         // This time, delete buttons are NOT visible
         await expect(page.getByText('delete this blog').first()).not.toBeVisible()
         await expect(page.getByText('delete this blog').last()).not.toBeVisible()
+      })
+
+      test.only('blogs are listed in order: blog with most likes is at the top', async ({ page }) => {
+        //await expect(page.getByText('magical girl by Milla Magia', { exact: true })).toBeVisible()
+        //await expect(page.getByRole('button', { name: 'show more information' }).nth(2)).toBeVisible()
+
+        const blogs = page.locator('.blog') //div elements, gets the blogs' all information
+        const blogCount = await blogs.count()
+        console.log('Number of blogs:', blogCount)
+        //await page.screenshot({ path: 'screenshot0.png' })
+
+        const firstBlog = blogs.nth(0) // Select the first blog
+        const firstBlogInfoButton = firstBlog.locator('button:has-text("show more information")')
+        await expect(firstBlogInfoButton).toBeVisible()
+
+        const secondBlog = blogs.nth(1); // Select the second blog
+        const secondBlogInfoButton = secondBlog.locator('button:has-text("show more information")')
+        await expect(secondBlogInfoButton).toBeVisible();
+
+        const thirdBlog = blogs.nth(2) // Select the third blog
+        const thirdBlogInfoButton = thirdBlog.locator('button:has-text("show more information")')
+        await expect(thirdBlogInfoButton).toBeVisible()
+
+        await firstBlogInfoButton.click();
+        await expect(page.getByText('Likes: 0').nth(0)).toBeVisible()
+        await page.getByRole('button', { name: 'like this blog' }).nth(0).click()
+        await page.getByText('Likes: 1').waitFor()  // Wait for the likes text to be rendered
+        await page.screenshot({ path: 'screenshot1.png' })
+        await page.getByRole('button', { name: 'hide information' }).click()
+        await page.screenshot({ path: 'screenshot1b.png' })
+
+        await secondBlogInfoButton.click()
+        await page.screenshot({ path: 'screenshot2.png' })
+        await expect(page.getByText('Likes: 0')).toBeVisible()
+        await page.getByRole('button', { name: 'like this blog' }).click()
+        await page.getByText('Likes: 1').waitFor()  // Wait for the likes text to be rendered
+        //await page.screenshot({ path: 'screenshot2b.png' })
+        await page.getByRole('button', { name: 'like this blog' }).click()
+        await page.getByText('Likes: 2').waitFor()  // Wait for the likes text to be rendered
+        //await page.screenshot({ path: 'screenshot2c.png' })
+        await page.getByRole('button', { name: 'hide information' }).click()
+        await page.screenshot({ path: 'screenshot2d.png' })
+
+        await thirdBlogInfoButton.click()
+        await page.screenshot({ path: 'screenshot3.png' })
+        await expect(page.getByText('Likes: 0')).toBeVisible()
+        await page.getByRole('button', { name: 'like this blog' }).click()
+        await page.getByText('Likes: 1').waitFor()  // Wait for the likes text to be rendered
+        await page.getByRole('button', { name: 'like this blog' }).click()
+        await page.getByText('Likes: 2').waitFor()  // Wait for the likes text to be rendered
+        await page.getByRole('button', { name: 'like this blog' }).click()
+        await page.getByText('Likes: 3').waitFor()  // Wait for the likes text to be rendered
+        await page.screenshot({ path: 'screenshot3a.png' })
+        await page.getByRole('button', { name: 'hide information' }).click()
+        await page.screenshot({ path: 'screenshot3b.png' })
+
+        await page.screenshot({ path: 'screenshot4.png' })
+
+        const titles = page.locator('.title') // p elements, gets the blogs only by their titles
+        await expect(titles.nth(0)).toHaveText('magical girl by Milla Magia')
+        await expect(titles.nth(1)).toHaveText('life at Vesuvius mountain by Milla Magia')
+        await expect(titles.nth(2)).toHaveText('all about magic potions by Milla Magia')
       })
     })
   })
